@@ -3161,21 +3161,30 @@ void homekit_mdns_init(homekit_server_t *server) {
 		return;
 	}
 
+	String h_name = String(name->value.string_value);
+	String mac = WiFi.macAddress(); // NN:NN:NN:NN:X1:X2 we want X1X2 for host name
+	h_name.concat("-");
+	String x1 = mac.substring(12, 14);
+	h_name.concat(x1);
+	String x2 = mac.substring(15, 17);
+	h_name.concat(x2); 
+	const char *host_name = h_name.c_str();
+	INFO("HOST Name: %s, MAC: %S", host_name, mac.c_str());
 	if (homekit_mdns_started) {
 		MDNS.close();
-		MDNS.begin(name->value.string_value, staIP);
-		INFO("MDNS restart: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
+		MDNS.begin(host_name, staIP);
+		INFO("MDNS restart: %s, IP: %s", host_name, staIP.toString().c_str());
 		MDNS.announce();
 		return;
 	}
 
-	//homekit_mdns_configure_init(name->value.string_value, PORT);
-	WiFi.hostname(name->value.string_value);
+	//homekit_mdns_configure_init(host_name, PORT);
+	WiFi.hostname(host_name);
 	// Must specify the MDNS runs on the IP of STA
-	MDNS.begin(name->value.string_value, staIP);
-	INFO("MDNS begin: %s, IP: %s", name->value.string_value, staIP.toString().c_str());
+	MDNS.begin(host_name, staIP);
+	INFO("MDNS begin: %s, IP: %s", host_name, staIP.toString().c_str());
 
-	MDNSResponder::hMDNSService mdns_service = MDNS.addService(name->value.string_value,
+	MDNSResponder::hMDNSService mdns_service = MDNS.addService(host_name,
 	HOMEKIT_MDNS_SERVICE, HOMEKIT_MDNS_PROTO, HOMEKIT_SERVER_PORT);
 	// Set a service specific callback for dynamic service TXT items.
 	// The callback is called, whenever service TXT items are needed for the given service.
